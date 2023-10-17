@@ -1,4 +1,6 @@
 #step01
+#实现variable类
+#没有引入ndarray实例
 
 mutable struct Var
     data

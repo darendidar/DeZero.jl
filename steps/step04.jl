@@ -1,4 +1,5 @@
 #step04
+#实现数值微分,复合函数求导
 
 mutable struct Var
     data
@@ -7,12 +8,12 @@ Var()=Var(nothing)
 
 #x^2函数
 square(x)=x.^2
-mutable struct Square<:Fun end
+struct Square end
 Square()=Var()
 Square(x::Var)=Var(square(x.data))
 
 #e^x函数
-mutable struct Exp<:Fun end
+struct Exp end
 Exp()=Var()
 Exp(x::Var)=Var(exp.(x.data))
 
@@ -31,4 +32,3 @@ f(x)=x|>Square|>Exp|>Square
 x=Var([0.5])
 dy=numerical_diff(f,x)
 println(dy)
-

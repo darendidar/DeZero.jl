@@ -1,6 +1,7 @@
-#step07
-#实现反向传播并自动化
-#递归方式实现backward方法
+#step09
+#使用循环实现backward方法，同时简化
+#使Variable创建时只支持data存储数组
+#转换为ndarray实例没做
 
 mutable struct Var
     data#用来存储数据
@@ -8,7 +9,7 @@ mutable struct Var
     creator#通过调用哪个类型获得
 end
 Var()=Var(nothing,nothing,nothing)
-Var(x)=Var(x,nothing,nothing)
+Var(x::AbstractArray)=Var(x,nothing,nothing)#只能传入数组
 
 #x^2函数
 square(x)=x.^2
@@ -27,12 +28,14 @@ function gradient(x::Var,gy)
     end
 end
 
-#递归的方式实现backward函数
-function backward(x::Var,gx)
-    if x.pre!==nothing
-        backward( x.pre , gradient(x,gx) )
-    else return gx
+#循环的方式实现backward函数
+function backward(x::Var, gx=nothing)
+    gx===nothing&&(gx=ones(eltype(x.data), size(x.data)))#根据数据规模创建相应导数值1
+    while x.pre !== nothing#每次检查有没有上一级
+        gx = gradient(x, gx)#先算出上一个变量的导数值
+        x = x.pre#再跳到上一个变量
     end
+    return gx#当跳到最开始的变量后返回这个变量的导数值
 end
 
 # main
