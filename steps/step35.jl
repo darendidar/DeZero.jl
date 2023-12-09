@@ -2,7 +2,6 @@
 #编写Tanh函数并重载tanh()
 #计算tanh函数一到八阶导数并画出关系图
 
-using Plots
 include("../src/core.jl")
 include("../src/utils.jl")
 
