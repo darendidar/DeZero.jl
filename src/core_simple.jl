@@ -40,7 +40,7 @@ Exp(x::Var) = Var(exp.(x.data), [x], Exp, nothing, x.generation + 1,nothing)
 struct Pow end
 Pow(x::Var, c::Number) = Var(x.data .^ c, [x,c], Pow, nothing, x.generation + 1,nothing)
 
-#幂运算
+#sin函数
 struct Sin end
 Sin(x::Var) = Var(sin.(x.data), [x], Sin, nothing, x.generation + 1,nothing)
 
