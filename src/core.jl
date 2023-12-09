@@ -68,6 +68,8 @@ function gradient(x::Var, y::Var)
         return x^(y.pre[2]-1)*y.grad*y.pre[2]#y的父变量中1是底数2是幂c
     elseif y.creator === Sin
         return cos(x) * y.grad
+    elseif y.creator === Cos
+        return -sin(x) * y.grad
     else
         return nothing
     end
