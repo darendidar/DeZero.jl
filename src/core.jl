@@ -1,4 +1,4 @@
-import Base: +, -, *, /, ^, sin, cos, tanh,reshape,transpose# 导入需要重载的函数
+import Base: +, -, *, /, ^, sin, cos, tanh,reshape,transpose,sum# 导入需要重载的函数
 
 mutable struct Var
     data#用来存储数据
@@ -60,14 +60,22 @@ Reshape(x::Var,shape) = Var(reshape(x.data,shape), [x], Reshape, nothing, x.gene
 struct Transpose end
 Transpose(x::Var) = Var(transpose(x.data), [x], Transpose, nothing, x.generation + 1, nothing)
 
+#sum_to函数
+struct SumTo end
+SumTo(x::Var,dims) = Var(sum(x.data,dims=dims), [x], SumTo, nothing, x.generation + 1, nothing)
 
+#broadcast_to函数
+struct BroadcastTo end
+BroadcastTo(x::Var,shape) = Var(x.data.+zeros(shape), [x], BroadcastTo, nothing, x.generation + 1, nothing)
 
-
+#sum_to函数
+struct Sum end
+Sum(x::Var,axis) = Var(axis===nothing ? [sum(x.data)] : sum(x.data,dims=axis), [x], Sum, nothing, x.generation + 1, nothing)
 
 #一个通用的求父变量的导数值的函数，输入（父变量，子变量）
 function gradient(x::Var, y::Var)
     if y.creator === Add
-        return y.grad
+        return sum_to(y.grad,size(x.data))
     elseif y.creator === Neg
         return -y.grad
     elseif y.creator === Mul
@@ -90,6 +98,12 @@ function gradient(x::Var, y::Var)
         return reshape(y.grad,size(x.data))
     elseif y.creator === Transpose
         return transpose(y.grad)
+    elseif y.creator === BroadcastTo
+        return sum_to(y.grad,size(x.data))
+    elseif y.creator === SumTo
+        return broadcast_to(y.grad,size(x.data))
+    elseif y.creator === Sum
+        return broadcast_to(y.grad,size(x.data))
     else
         return nothing
     end
@@ -146,6 +160,21 @@ sin(v::Var) = Sin(v)
 cos(v::Var) = Cos(v)
 tanh(v::Var) = Tanh(v)
 transpose(v::Var) = Transpose(v)
+broadcast_to(v::Var,shape)=BroadcastTo(v,shape)
+sum(v::Var;axis=nothing)=Sum(v,axis)
+function sum_to(v::Var,shape)
+    if size(v.data)==shape
+        return v
+    elseif size(rand(shape),1)==1&&size(rand(shape),2)==1#标量
+        return sum(v)
+    elseif size(rand(shape),1)==1&&size(rand(shape),2)>1#行向量
+        return sum(v,axis=1)
+    elseif size(rand(shape),1)>1&&size(rand(shape),2)==1#行向量
+        return sum(v,axis=2)
+    else 
+        @warn "假设错误，需要修改函数"; return v
+    end
+end
 function reshape(v::Var,shape)
     if size(v.data)==shape
         return v
