@@ -77,11 +77,11 @@ function gradient(x::Var, y::Var)
     if y.creator === Add
         return sum_to(y.grad,size(x.data))
     elseif y.creator === Neg
-        return -y.grad
+        return sum_to(-y.grad,size(x.data))
     elseif y.creator === Mul
-        return y.grad * (x === y.pre[1] ? (y.pre[2]) : (y.pre[1]))
+        return sum_to((y.grad * (x === y.pre[1] ? (y.pre[2]) : (y.pre[1]))),size(x.data))
     elseif y.creator === Div
-        return y.grad * (x === y.pre[1] ? (1 / y.pre[2]) : (y.pre[1] / y.pre[2]^2) * -1)
+        return sum_to((y.grad * (x === y.pre[1] ? (1 / y.pre[2]) : (y.pre[1] / y.pre[2]^2) * -1)),size(x.data))
     elseif y.creator === Square
         return 2 * x * y.grad
     elseif y.creator === Exp
