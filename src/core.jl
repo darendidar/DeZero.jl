@@ -72,6 +72,11 @@ BroadcastTo(x::Var,shape) = Var(x.data.+zeros(shape), [x], BroadcastTo, nothing,
 struct Sum end
 Sum(x::Var,axis) = Var(axis===nothing ? [sum(x.data)] : sum(x.data,dims=axis), [x], Sum, nothing, x.generation + 1, nothing)
 
+#matmul函数(内积)
+struct MatMul end
+MatMul(a::Var, b::Var) = Var(a.data * b.data, [a, b], MatMul, nothing, max(a.generation, b.generation) + 1, nothing)
+
+
 #一个通用的求父变量的导数值的函数，输入（父变量，子变量）
 function gradient(x::Var, y::Var)
     if y.creator === Add
@@ -104,6 +109,14 @@ function gradient(x::Var, y::Var)
         return broadcast_to(y.grad,size(x.data))
     elseif y.creator === Sum
         return broadcast_to(y.grad,size(x.data))
+    elseif y.creator === MatMul
+        if x === y.pre[1] 
+            pre_another_t=transpose(y.pre[2])
+            return matmul(y.grad, pre_another_t)
+        else 
+            pre_another_t=transpose(y.pre[1])
+            return matmul(pre_another_t , y.grad)
+        end
     else
         return nothing
     end
@@ -162,6 +175,7 @@ tanh(v::Var) = Tanh(v)
 transpose(v::Var) = Transpose(v)
 broadcast_to(v::Var,shape)=BroadcastTo(v,shape)
 sum(v::Var;axis=nothing)=Sum(v,axis)
+matmul(a::Var, b::Var) = MatMul(a, b)
 function sum_to(v::Var,shape)
     if size(v.data)==shape
         return v
