@@ -76,6 +76,10 @@ Sum(x::Var,axis) = Var(axis===nothing ? [sum(x.data)] : sum(x.data,dims=axis), [
 struct MatMul end
 MatMul(a::Var, b::Var) = Var(a.data * b.data, [a, b], MatMul, nothing, max(a.generation, b.generation) + 1, nothing)
 
+#meansquarederror函数
+struct MeanSquaredError end
+MeanSquaredError(a::Var, b::Var) = Var(sum( (a.data-b.data).^2 )/length(a.data-b.data), [a, b], MeanSquaredError, nothing, max(a.generation, b.generation) + 1, nothing)
+
 
 #一个通用的求父变量的导数值的函数，输入（父变量，子变量）
 function gradient(x::Var, y::Var)
@@ -109,6 +113,10 @@ function gradient(x::Var, y::Var)
         return broadcast_to(y.grad,size(x.data))
     elseif y.creator === Sum
         return broadcast_to(y.grad,size(x.data))
+    elseif y.creator === MeanSquaredError
+        diff = y.pre[1] - y.pre[2]
+        gx0 = y.grad * diff * (2 ./ length(diff.data))
+        return x === y.pre[1] ? gx0 : -gx0
     elseif y.creator === MatMul
         if x === y.pre[1] 
             pre_another_t=transpose(y.pre[2])
@@ -176,6 +184,7 @@ transpose(v::Var) = Transpose(v)
 broadcast_to(v::Var,shape)=BroadcastTo(v,shape)
 sum(v::Var;axis=nothing)=Sum(v,axis)
 matmul(a::Var, b::Var) = MatMul(a, b)
+mse(a::Var,b::Var) = MeanSquaredError(a,b)
 function sum_to(v::Var,shape)
     if size(v.data)==shape
         return v
