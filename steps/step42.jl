@@ -26,10 +26,11 @@ function main()
         backward!(loss)
         W.data -= lr * W.grad.data
         b.data -= lr * b.grad.data
-        @show i,W.data, b.data, loss.data
+        # @show i,W.data, b.data, loss.data
     end
     scatter(x.data, y.data, label="random_points")
-    plot!(x.data, W.data .* x.data .+ b.data, label="predict_line")
+    pre_x=0:0.01:1
+    plot!(pre_x, predict(Var(pre_x)).data, label="predict_line")
     xlabel!("X")
     ylabel!("Y")
     title!("Hui Gui")
