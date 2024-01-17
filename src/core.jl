@@ -1,4 +1,4 @@
-import Base: +, -, *, /, ^, sin, cos, tanh,reshape,transpose,sum# 导入需要重载的函数
+import Base: +, -, *, /, ^, sin, cos, tanh,reshape,transpose,sum,exp# 导入需要重载的函数
 
 mutable struct Var
     data#用来存储数据
@@ -94,7 +94,7 @@ function gradient(x::Var, y::Var)
     elseif y.creator === Square
         return 2 * x * y.grad
     elseif y.creator === Exp
-        return exp.x * y.grad
+        return exp(x) * y.grad
     elseif y.creator === Pow
         return x^(y.pre[2] - 1) * y.grad * y.pre[2]#y的父变量中1是底数2是幂c
     elseif y.creator === Sin
@@ -152,6 +152,7 @@ function backward!(v::Var)
                 if !(x in list)#防止重复加入同一个父变量
                     push!(list, x)#父变量加入列表中
                 end
+          
             end
         end
         splice!(list, index)#求出这个变量所有父变量导数值后从列表删除这个变量
@@ -185,14 +186,15 @@ broadcast_to(v::Var,shape)=BroadcastTo(v,shape)
 sum(v::Var;axis=nothing)=Sum(v,axis)
 matmul(a::Var, b::Var) = MatMul(a, b)
 mse(a::Var,b::Var) = MeanSquaredError(a,b)
+exp(v::Var) = Exp(v)
 function sum_to(v::Var,shape)
     if size(v.data)==shape
         return v
-    elseif size(rand(shape),1)==1&&size(rand(shape),2)==1#标量
+    elseif  length(shape)==1||shape[1]==1&&shape[2]==1#标量
         return sum(v)
-    elseif size(rand(shape),1)==1&&size(rand(shape),2)>1#行向量
+    elseif shape[2]>1#行向量
         return sum(v,axis=1)
-    elseif size(rand(shape),1)>1&&size(rand(shape),2)==1#行向量
+    elseif shape[1]>1#列向量
         return sum(v,axis=2)
     else 
         @warn "假设错误，需要修改函数"; return v
